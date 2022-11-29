@@ -1,6 +1,8 @@
 INSERT INTO txn_calculations (
     source_name,
     source_tx_id,
+    display_currency_amount,
+    timestamp,
     aggregate_sats,
     aggregate_display_currency_amount,
     stack_price_with_pl_included,
@@ -12,6 +14,8 @@ INSERT INTO txn_calculations (
 ) VALUES (
     :source_name,
     :source_tx_id,
+    :display_currency_amount,
+    :timestamp,
     :aggregate_sats,
     :aggregate_display_currency_amount,
     :stack_price_with_pl_included,

@@ -8,6 +8,10 @@ const DISPLAY_AMOUNT = `printf("%.2f", display_currency_amount) AS amount`
 
 export const BASE_TXNS_ASC_SELECT = `
   SELECT
+    source_name,
+    source_tx_id,
+    display_currency_amount,
+
     timestamp,
     sats_amount,
     ${PRICE_PER_BTC_FRAG} as price,

@@ -67,13 +67,13 @@ export const syncLatestTxns = async ({
     }
   }
   // Persist locally
-  await TransactionsRepository(db).persistManyTxns(data)
+  await txnsRepo.persistManyTxns(data)
 
   // Check balance
   // Note, figure how to (default is rescanForMissing):
   //  - handle pending transactions that disappear later (e.g. RBF)
   //  - handle pending incoming onchain transactions that get replaced when confirmed
-  const sumFromLocal = await TransactionsRepository(db).sumSatsAmount()
+  const sumFromLocal = await txnsRepo.sumSatsAmount()
   const balanceFromSource = await Galoy().balance()
   if (sumFromLocal !== balanceFromSource) {
     return new LocalBalanceDoesNotMatchSourceError(
@@ -83,9 +83,33 @@ export const syncLatestTxns = async ({
 
   // Calculate stack prices from last known point
 
-  // 1. Create state table if not exists & check for last entry in table
+  // 1. Check for last entry in table
+  const lastRow = await txnsRepo.fetchLatestCalc()
 
   // 2. Start iterating through transactions table and populating state table
+  const allRowsWithCalcs = await txnsRepo.fetchAllTxnsAscAndCalculate()
+  if (allRowsWithCalcs instanceof Error) throw allRowsWithCalcs
+  let row: CalcRowRaw
+  const rowsToPersist: CalcRow[] = []
+  for (row of allRowsWithCalcs) {
+    const rowToPersist = {
+      source_name: row.source_name,
+      source_tx_id: row.source_tx_id,
+      display_currency_amount: row.display_currency_amount,
+      timestamp: row.timestamp,
+      aggregate_sats: row.agg_sats,
+      aggregate_display_currency_amount: row.agg_fiat_with_pl,
+      stack_price_with_pl_included: row.avg_price_with_pl,
+      display_currency_amount_less_pl: row.fiat_no_pl,
+      display_currency_pl: row.fiat_pl,
+      display_currency_pl_percentage: row.pl_pct,
+      aggregate_display_currency_amount_less_pl: row.agg_fiat_no_pl,
+      stack_price_without_pl: row.avg_price_no_pl,
+    }
+    rowsToPersist.push(rowToPersist)
+  }
+  const result = await txnsRepo.persistManyCalcs(rowsToPersist)
+  if (result instanceof Error) throw result
 
   // 3. Finish with some check (sats persisted as well maybe)
 

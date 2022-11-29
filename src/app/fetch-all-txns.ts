@@ -1,3 +1,4 @@
 import { TransactionsRepository } from "../services/sqlite"
 
-export const fetchAllTxns = async (db: Db) => TransactionsRepository(db).fetchAll()
+export const fetchAllTxnsAscAndCalculate = async (db: Db) =>
+  TransactionsRepository(db).fetchAllTxnsAscAndCalculate()

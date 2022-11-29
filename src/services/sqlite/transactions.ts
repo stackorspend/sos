@@ -5,6 +5,9 @@ import { BASE_TXNS_ASC_SELECT, handleRow } from "./requests/select-txns"
 
 const REQUESTS_DIR = "./src/services/sqlite/requests"
 
+const TXNS_TABLE = "transactions"
+const CALCS_TABLE = "txn_calculations"
+
 const CREATE_TXNS_TABLE = fs.readFileSync(`${REQUESTS_DIR}/create-txns-table.sql`, "utf8")
 const CREATE_CALCS_TABLE = fs.readFileSync(
   `${REQUESTS_DIR}/create-txn-calcs-table.sql`,
@@ -13,7 +16,11 @@ const CREATE_CALCS_TABLE = fs.readFileSync(
 const INSERT_TXN = fs.readFileSync(`${REQUESTS_DIR}/insert-txn.sql`, "utf8")
 const INSERT_CALC = fs.readFileSync(`${REQUESTS_DIR}/insert-calc.sql`, "utf8")
 
-const TXNS_TABLE = "transactions"
+const SELECT_LATEST_CALC = `
+  SELECT * FROM ${CALCS_TABLE}
+  ORDER BY timestamp DESC LIMIT 1;
+`
+
 const DROP_TXNS_TABLE = `DROP TABLE IF EXISTS ${TXNS_TABLE};`
 
 export const TransactionsRepository = (db: Db) => {
@@ -79,7 +86,7 @@ export const TransactionsRepository = (db: Db) => {
     }
   }
 
-  const fetchAll = async () => {
+  const fetchAllTxnsAscAndCalculate = async () => {
     let acc = { avg_price_no_pl: 0, agg_fiat_no_pl: 0 }
     let prev = { prev_agg_sats: 0, prev_avg_price: 0 }
 
@@ -107,7 +114,22 @@ export const TransactionsRepository = (db: Db) => {
     return newRows
   }
 
-  const persistManyTxns = async (data: INPUT_TXN[]) => {
+  const fetchLatestCalc = async () => {
+    try {
+      const row = await db.get(SELECT_LATEST_CALC)
+      return row
+    } catch (err) {
+      const { message } = err as Error
+      switch (true) {
+        case message.includes("no such table"):
+          return undefined
+        default:
+          return new UnknownRepositoryError(message)
+      }
+    }
+  }
+
+  const persistManyTxns = async (rows: INPUT_TXN[]) => {
     try {
       await db.run(CREATE_TXNS_TABLE)
 
@@ -115,8 +137,7 @@ export const TransactionsRepository = (db: Db) => {
       const start = Date.now()
 
       const stmt = await db.prepare(INSERT_TXN)
-      for (const i in data) {
-        const txn = data[i]
+      for (const txn of rows) {
         await stmt.run({
           [":sats_amount"]: txn.sats,
           [":timestamp"]: new Date(txn.timestamp * 1000).toISOString(),
@@ -132,7 +153,7 @@ export const TransactionsRepository = (db: Db) => {
 
       await stmt.finalize()
       const elapsed = (Date.now() - Number(start)) / 1000
-      console.log(`Persisted ${data.length} records in ${elapsed}s.`)
+      console.log(`Persisted ${rows.length} records in ${elapsed}s.`)
     } catch (err) {
       const { message } = err as Error
       switch (true) {
@@ -142,26 +163,35 @@ export const TransactionsRepository = (db: Db) => {
     }
   }
 
-  const persistCalc = async (row) => {
+  const persistManyCalcs = async (rows) => {
     try {
       await db.run(CREATE_CALCS_TABLE)
 
-      const stmt = await db.prepare(INSERT_TXN)
-      await stmt.run({
-        [":source_name"]: row.source_name,
-        [":source_tx_id"]: row.source_tx_id,
-        [":aggregate_sats"]: row.aggregate_sats,
-        [":aggregate_display_currency_amount"]: row.aggregate_display_currency_amount,
-        [":stack_price_with_pl_included"]: row.stack_price_with_pl_included,
-        [":display_currency_amount_less_pl"]: row.display_currency_amount_less_pl,
-        [":display_currency_pl"]: row.display_currency_pl,
-        [":display_currency_pl_percentage"]: row.display_currency_pl_percentage,
-        [":aggregate_display_currency_amount_less_pl"]:
-          row.aggregate_display_currency_amount_less_pl,
-        [":stack_price_without_pl"]: row.stack_price_without_pl,
-      })
+      console.log("Preparing calcs persist statement...")
+      const start = Date.now()
+
+      const stmt = await db.prepare(INSERT_CALC)
+      for (const row of rows) {
+        await stmt.run({
+          [":source_name"]: row.source_name,
+          [":source_tx_id"]: row.source_tx_id,
+          [":display_currency_amount"]: row.display_currency_amount,
+          [":timestamp"]: row.timestamp,
+          [":aggregate_sats"]: row.aggregate_sats,
+          [":aggregate_display_currency_amount"]: row.aggregate_display_currency_amount,
+          [":stack_price_with_pl_included"]: row.stack_price_with_pl_included,
+          [":display_currency_amount_less_pl"]: row.display_currency_amount_less_pl,
+          [":display_currency_pl"]: row.display_currency_pl,
+          [":display_currency_pl_percentage"]: row.display_currency_pl_percentage,
+          [":aggregate_display_currency_amount_less_pl"]:
+            row.aggregate_display_currency_amount_less_pl,
+          [":stack_price_without_pl"]: row.stack_price_without_pl,
+        })
+      }
 
       await stmt.finalize()
+      const elapsed = (Date.now() - Number(start)) / 1000
+      console.log(`Persisted ${rows.length} calc records in ${elapsed}s.`)
     } catch (err) {
       const { message } = err as Error
       switch (true) {
@@ -176,8 +206,9 @@ export const TransactionsRepository = (db: Db) => {
     deleteRepositoryForRebuild,
     sumSatsAmount,
     fetchTxn,
-    fetchAll,
+    fetchAllTxnsAscAndCalculate,
+    fetchLatestCalc,
     persistManyTxns,
-    persistCalc,
+    persistManyCalcs,
   }
 }

@@ -1,4 +1,4 @@
-import { fetchAllTxns, syncLatestTxns, getStackCost } from "./src/app"
+import { fetchAllTxnsAscAndCalculate, syncLatestTxns, getStackCost } from "./src/app"
 
 import { getDb, TransactionsRepository } from "./src/services/sqlite"
 
@@ -9,7 +9,7 @@ export const StackorSpend = () => {
     syncTxns: syncLatestTxns,
 
     // TODO: Add a paginated option here for loading for Txns view (requires calcs state table first)
-    fetchTxns: fetchAllTxns,
+    fetchTxns: fetchAllTxnsAscAndCalculate,
     getStackCost,
     // checkPlannedStackTxn,
     // checkPlannedSpendTxn,

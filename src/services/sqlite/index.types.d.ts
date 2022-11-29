@@ -19,4 +19,34 @@ type Txn = {
   }
 }
 
+type CalcRowRaw = {
+  source_name
+  source_tx_id
+  timestamp
+  agg_sats
+  avg_price_with_pl
+  display_currency_amount
+  fiat_no_pl
+  agg_fiat_with_pl
+  fiat_pl
+  pl_pct
+  agg_fiat_no_pl
+  avg_price_no_pl
+}
+
+type CalcRow = {
+  source_name
+  source_tx_id
+  display_currency_amount
+  timestamp
+  aggregate_sats
+  aggregate_display_currency_amount
+  stack_price_with_pl_included
+  display_currency_amount_less_pl
+  display_currency_pl
+  display_currency_pl_percentage
+  aggregate_display_currency_amount_less_pl
+  stack_price_without_pl
+}
+
 type Db = import("sqlite").Database
