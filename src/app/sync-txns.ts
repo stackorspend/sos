@@ -67,7 +67,7 @@ export const syncLatestTxns = async ({
     }
   }
   // Persist locally
-  await TransactionsRepository(db).persistMany(data)
+  await TransactionsRepository(db).persistManyTxns(data)
 
   // Check balance
   // Note, figure how to (default is rescanForMissing):
