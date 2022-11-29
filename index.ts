@@ -33,11 +33,13 @@ const main = async () => {
   const db = await getDb()
 
   console.log("Syncing transactions from Galoy...")
-  const exists = await TransactionsRepository(db).checkTableExists("transactions")
+  const exists = await TransactionsRepository(db).checkRepositoryExists()
   if (exists instanceof Error) throw exists
   const synced = await sos.syncTxns({
     db,
     pageSize: exists ? SYNC_PAGE_SIZE : IMPORT_PAGE_SIZE,
+    // rescanForMissing: true,
+    // rebuild: true,
   })
   if (synced instanceof Error) throw synced
   console.log("Finished sync.")

@@ -8,10 +8,13 @@ const REQUESTS_DIR = "./src/services/sqlite/requests"
 const CREATE_TABLE = fs.readFileSync(`${REQUESTS_DIR}/create-txns-table.sql`, "utf8")
 const INSERT = fs.readFileSync(`${REQUESTS_DIR}/insert-txn.sql`, "utf8")
 
+const TXNS_TABLE = "transactions"
+const DROP_TXNS_TABLE = `DROP TABLE IF EXISTS ${TXNS_TABLE};`
+
 export const TransactionsRepository = (db: Db) => {
-  const checkTableExists = async (table: string): Promise<boolean | Error> => {
+  const checkRepositoryExists = async (): Promise<boolean | Error> => {
     try {
-      const txn: Txn | undefined = await db.get(`SELECT * FROM ${table}`)
+      const txn: Txn | undefined = await db.get(`SELECT * FROM ${TXNS_TABLE}`)
       return true
     } catch (err) {
       const { message } = err as Error
@@ -19,7 +22,20 @@ export const TransactionsRepository = (db: Db) => {
         case message.includes("no such table"):
           return false
         default:
-          return new UnknownRepositoryError((err as Error).message)
+          return new UnknownRepositoryError(message)
+      }
+    }
+  }
+
+  const deleteRepositoryForRebuild = async (): Promise<true | Error> => {
+    try {
+      await db.exec(DROP_TXNS_TABLE)
+      return true
+    } catch (err) {
+      const { message } = err as Error
+      switch (true) {
+        default:
+          return new UnknownRepositoryError(message)
       }
     }
   }
@@ -114,7 +130,8 @@ export const TransactionsRepository = (db: Db) => {
   }
 
   return {
-    checkTableExists,
+    checkRepositoryExists,
+    deleteRepositoryForRebuild,
     sumSatsAmount,
     fetchTxn,
     fetchAll,

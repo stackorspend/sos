@@ -9,22 +9,26 @@ import { TransactionsRepository } from "../services/sqlite"
 export const syncLatestTxns = async ({
   db,
   pageSize,
-  rescan = false,
+  rescanForMissing = false,
+  rebuild = false,
 }: {
   db: Db
   pageSize: number
-  rescan?: boolean // continues scanning through all txns to find all missing txns
+  rescanForMissing?: boolean // continues scanning through all txns to find all missing txns
+  rebuild?: boolean // drops table and does full rebuild
 }) => {
-  // TODO: Figure out how to fix mismatched/corrupted txns on rescan
+  // TODO: Figure out how to fix mismatched/corrupted txns on rescanForMissing
 
   const txnsRepo = TransactionsRepository(db)
+
+  if (rebuild) txnsRepo.deleteRepositoryForRebuild()
 
   const data: INPUT_TXN[] = []
   let transactions: Txn[]
   let lastCursor: string | false | null = null
   let hasNextPage: boolean = true
   let finish = false
-  while ((rescan || !finish) && hasNextPage && lastCursor !== false) {
+  while ((rescanForMissing || !finish) && hasNextPage && lastCursor !== false) {
     // Fetch from source
     ;({ transactions, lastCursor, hasNextPage } = await Galoy().fetchTransactionsPage({
       first: pageSize,
@@ -66,12 +70,24 @@ export const syncLatestTxns = async ({
   await TransactionsRepository(db).persistMany(data)
 
   // Check balance
-  // Note: figure how to handle pending transactions that disappear later (e.g. RBF)
+  // Note, figure how to (default is rescanForMissing):
+  //  - handle pending transactions that disappear later (e.g. RBF)
+  //  - handle pending incoming onchain transactions that get replaced when confirmed
   const sumFromLocal = await TransactionsRepository(db).sumSatsAmount()
   const balanceFromSource = await Galoy().balance()
   if (sumFromLocal !== balanceFromSource) {
-    return new LocalBalanceDoesNotMatchSourceError()
+    return new LocalBalanceDoesNotMatchSourceError(
+      JSON.stringify({ sumFromLocal, balanceFromSource }),
+    )
   }
+
+  // Calculate stack prices from last known point
+
+  // 1. Create state table if not exists & check for last entry in table
+
+  // 2. Start iterating through transactions table and populating state table
+
+  // 3. Finish with some check (sats persisted as well maybe)
 
   return true
 }
