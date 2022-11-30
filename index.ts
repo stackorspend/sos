@@ -5,10 +5,8 @@ import { getDb, TransactionsRepository } from "./src/services/sqlite"
 // API definition
 export const StackorSpend = () => {
   return {
-    // TODO: Write state to separate table on sync/resync (instead of calculating in SELECT)
     syncTxns: syncLatestTxns,
 
-    // TODO: Add a paginated option here for loading for Txns view (requires calcs state table first)
     fetchTxns,
     getStackCost,
     // checkPlannedStackTxn,
