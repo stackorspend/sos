@@ -1,8 +1,7 @@
 INSERT INTO txn_calculations (
-    source_name,
     source_tx_id,
-    display_currency_amount,
     timestamp,
+
     aggregate_sats,
     aggregate_display_currency_amount,
     stack_price_with_pl_included,
@@ -12,10 +11,9 @@ INSERT INTO txn_calculations (
     aggregate_display_currency_amount_less_pl,
     stack_price_without_pl
 ) VALUES (
-    :source_name,
     :source_tx_id,
-    :display_currency_amount,
     :timestamp,
+
     :aggregate_sats,
     :aggregate_display_currency_amount,
     :stack_price_with_pl_included,
@@ -26,7 +24,6 @@ INSERT INTO txn_calculations (
     :stack_price_without_pl
 )
   ON CONFLICT(source_tx_id) DO UPDATE SET
-    display_currency_amount = :display_currency_amount,
     aggregate_sats = :aggregate_sats,
     aggregate_display_currency_amount = :aggregate_display_currency_amount,
     stack_price_with_pl_included = :stack_price_with_pl_included,

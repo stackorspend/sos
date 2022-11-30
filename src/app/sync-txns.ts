@@ -93,9 +93,7 @@ export const syncLatestTxns = async ({
   const rowsToPersist: CalcRow[] = []
   for (row of allRowsWithCalcs) {
     const rowToPersist = {
-      source_name: row.source_name,
       source_tx_id: row.source_tx_id,
-      display_currency_amount: row.display_currency_amount,
       timestamp: row.timestamp,
       aggregate_sats: row.agg_sats,
       aggregate_display_currency_amount: row.agg_fiat_with_pl,

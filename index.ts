@@ -1,4 +1,4 @@
-import { fetchAllTxnsAscAndCalculate, syncLatestTxns, getStackCost } from "./src/app"
+import { fetchTxns, syncLatestTxns, getStackCost } from "./src/app"
 
 import { getDb, TransactionsRepository } from "./src/services/sqlite"
 
@@ -9,7 +9,7 @@ export const StackorSpend = () => {
     syncTxns: syncLatestTxns,
 
     // TODO: Add a paginated option here for loading for Txns view (requires calcs state table first)
-    fetchTxns: fetchAllTxnsAscAndCalculate,
+    fetchTxns,
     getStackCost,
     // checkPlannedStackTxn,
     // checkPlannedSpendTxn,
@@ -45,9 +45,13 @@ const main = async () => {
   console.log("Finished sync.")
 
   console.log("Fetching transactions from local db...")
-  const txns = await sos.fetchTxns(db)
-  if (txns instanceof Error) throw txns
-  console.log("Last 2 txns:", txns.slice(txns.length - 3, txns.length - 1))
+  const pageOne = await sos.fetchTxns({ db, first: 3 })
+  if (pageOne instanceof Error) throw pageOne
+  const { cursor, txns } = pageOne
+  console.log("Page 1 txns:", txns)
+  console.log("Page 1 cursor:", cursor)
+  const pageTwo = await sos.fetchTxns({ db, first: 2, after: cursor })
+  console.log("Page 2:", pageTwo)
 
   const stackCost = await sos.getStackCost(db)
   console.log("Current (DCA'd) stack cost is:", stackCost)

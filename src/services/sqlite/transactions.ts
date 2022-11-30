@@ -5,6 +5,8 @@ import { BASE_TXNS_ASC_SELECT, handleRow } from "./requests/select-txns"
 
 const REQUESTS_DIR = "./src/services/sqlite/requests"
 
+const DEFAULT_PAGE_SIZE = 10
+
 const TXNS_TABLE = "transactions"
 const CALCS_TABLE = "txn_calculations"
 
@@ -19,6 +21,27 @@ const INSERT_CALC = fs.readFileSync(`${REQUESTS_DIR}/upsert-calc.sql`, "utf8")
 const SELECT_LATEST_CALC = `
   SELECT * FROM ${CALCS_TABLE}
   ORDER BY timestamp DESC LIMIT 1;
+`
+
+const TXNS_JOIN = `
+  SELECT * FROM transactions
+  INNER JOIN txn_calculations
+  ON transactions.source_tx_id = txn_calculations.source_tx_id
+  ORDER BY timestamp DESC, sats_amount DESC
+  LIMIT :first;
+`
+
+const TXNS_JOIN_PAGE = `
+  SELECT * FROM transactions
+  INNER JOIN txn_calculations
+  ON transactions.source_tx_id = txn_calculations.source_tx_id
+  WHERE (
+    transactions.timestamp = ( SELECT transactions.timestamp FROM transactions WHERE source_tx_id = :after)
+    AND sats_amount < ( SELECT sats_amount FROM transactions WHERE source_tx_id = :after)
+  )
+  OR transactions.timestamp < ( SELECT transactions.timestamp FROM transactions WHERE source_tx_id = :after)
+  ORDER BY transactions.timestamp DESC, sats_amount DESC
+  LIMIT :first
 `
 
 const DROP_TXNS_TABLE = `DROP TABLE IF EXISTS ${TXNS_TABLE};`
@@ -75,6 +98,28 @@ export const TransactionsRepository = (db: Db) => {
         id,
       )
       return txn
+    } catch (err) {
+      const { message } = err as Error
+      switch (true) {
+        case message.includes("no such table"):
+          return new TableNotCreatedYetError()
+        default:
+          return new UnknownRepositoryError(message)
+      }
+    }
+  }
+
+  const fetchTxns = async ({ first, after }: { first?: number; after?: string }) => {
+    try {
+      // Note: These potentially break if there are more than one records with
+      //       the same 'sats_amount' and 'timestamp' values (which should never happen)
+      const rows = after
+        ? await db.all(TXNS_JOIN_PAGE, {
+            [":first"]: first || DEFAULT_PAGE_SIZE,
+            [":after"]: after,
+          })
+        : await db.all(TXNS_JOIN, { [":first"]: first || DEFAULT_PAGE_SIZE })
+      return rows
     } catch (err) {
       const { message } = err as Error
       switch (true) {
@@ -173,9 +218,7 @@ export const TransactionsRepository = (db: Db) => {
       const stmt = await db.prepare(INSERT_CALC)
       for (const row of rows) {
         await stmt.run({
-          [":source_name"]: row.source_name,
           [":source_tx_id"]: row.source_tx_id,
-          [":display_currency_amount"]: row.display_currency_amount,
           [":timestamp"]: row.timestamp,
           [":aggregate_sats"]: row.aggregate_sats,
           [":aggregate_display_currency_amount"]: row.aggregate_display_currency_amount,
@@ -206,6 +249,7 @@ export const TransactionsRepository = (db: Db) => {
     deleteRepositoryForRebuild,
     sumSatsAmount,
     fetchTxnById,
+    fetchTxns,
     fetchAllTxnsAscAndCalculate,
     fetchLatestCalc,
     persistManyTxns,
