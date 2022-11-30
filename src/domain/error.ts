@@ -9,4 +9,5 @@ export class DomainError extends Error {
 export class RepositoryError extends DomainError {}
 export class TableNotCreatedYetError extends RepositoryError {}
 export class LocalBalanceDoesNotMatchSourceError extends RepositoryError {}
+export class CalculationsMismatchError extends RepositoryError {}
 export class UnknownRepositoryError extends RepositoryError {}

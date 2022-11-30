@@ -1,4 +1,5 @@
 import {
+  CalculationsMismatchError,
   LocalBalanceDoesNotMatchSourceError,
   TableNotCreatedYetError,
 } from "../domain/error"
@@ -87,8 +88,8 @@ export const syncLatestTxns = async ({
   const lastRow = await txnsRepo.fetchLatestCalc()
 
   // 2. Start iterating through transactions table and populating state table
-  const allRowsWithCalcs = await txnsRepo.fetchAllTxnsAscAndCalculate()
-  if (allRowsWithCalcs instanceof Error) throw allRowsWithCalcs
+  const allRowsWithCalcs = await txnsRepo.processCalculationsForTransactions()
+  if (allRowsWithCalcs instanceof Error) return allRowsWithCalcs
   let row: CalcRowRaw
   const rowsToPersist: CalcRow[] = []
   for (row of allRowsWithCalcs) {
@@ -107,9 +108,19 @@ export const syncLatestTxns = async ({
     rowsToPersist.push(rowToPersist)
   }
   const result = await txnsRepo.persistManyCalcs(rowsToPersist)
-  if (result instanceof Error) throw result
+  if (result instanceof Error) return result
 
-  // 3. Finish with some check (sats persisted as well maybe)
+  // 3. Finish with check
+  const mismatchedIds = await txnsRepo.fetchMismatchedIds()
+  if (mismatchedIds instanceof Error) return mismatchedIds
+
+  const lastTxn = await txnsRepo.fetchTxns({ first: 1 })
+  if (lastTxn instanceof Error) return lastTxn
+  const { aggregate_sats } = lastTxn[0]
+
+  const calcMatchCheck =
+    mismatchedIds && mismatchedIds.length === 0 && sumFromLocal === aggregate_sats
+  if (!calcMatchCheck) return new CalculationsMismatchError()
 
   return true
 }

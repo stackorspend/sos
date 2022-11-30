@@ -44,6 +44,20 @@ const TXNS_JOIN_PAGE = `
   LIMIT :first
 `
 
+const SELECT_MISMATCHED_IDS = `
+  SELECT transactions.source_tx_id FROM transactions
+  LEFT JOIN txn_calculations
+  ON transactions.source_tx_id = txn_calculations.source_tx_id
+  WHERE txn_calculations.source_tx_id IS NULL
+
+  UNION ALL
+
+  SELECT txn_calculations.source_tx_id FROM txn_calculations
+  LEFT JOIN transactions
+  ON txn_calculations.source_tx_id = transactions.source_tx_id
+  WHERE transactions.source_tx_id IS NULL
+`
+
 const DROP_TXNS_TABLE = `DROP TABLE IF EXISTS ${TXNS_TABLE};`
 
 export const TransactionsRepository = (db: Db) => {
@@ -131,7 +145,7 @@ export const TransactionsRepository = (db: Db) => {
     }
   }
 
-  const fetchAllTxnsAscAndCalculate = async () => {
+  const processCalculationsForTransactions = async () => {
     let acc = { avg_price_no_pl: 0, agg_fiat_no_pl: 0 }
     let prev = { prev_agg_sats: 0, prev_avg_price: 0 }
 
@@ -157,6 +171,21 @@ export const TransactionsRepository = (db: Db) => {
     }
 
     return newRows
+  }
+
+  const fetchMismatchedIds = async (): Promise<{ source_tx_id: string }[] | Error> => {
+    try {
+      const rows = await db.all(SELECT_MISMATCHED_IDS)
+      return rows
+    } catch (err) {
+      const { message } = err as Error
+      switch (true) {
+        case message.includes("no such table"):
+          return new TableNotCreatedYetError()
+        default:
+          return new UnknownRepositoryError(message)
+      }
+    }
   }
 
   const fetchLatestCalc = async () => {
@@ -250,7 +279,8 @@ export const TransactionsRepository = (db: Db) => {
     sumSatsAmount,
     fetchTxnById,
     fetchTxns,
-    fetchAllTxnsAscAndCalculate,
+    processCalculationsForTransactions,
+    fetchMismatchedIds,
     fetchLatestCalc,
     persistManyTxns,
     persistManyCalcs,
