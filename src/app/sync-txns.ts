@@ -54,7 +54,7 @@ export const syncLatestTxns = async ({
         status,
       } = tx.node
 
-      const txInDb = await txnsRepo.fetchTxn(id)
+      const txInDb = await txnsRepo.fetchTxnById(id)
       if (txInDb instanceof Error && !(txInDb instanceof TableNotCreatedYetError)) {
         throw txInDb
       }

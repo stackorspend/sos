@@ -68,7 +68,7 @@ export const TransactionsRepository = (db: Db) => {
     }
   }
 
-  const fetchTxn = async (id: string): Promise<Txn | undefined | Error> => {
+  const fetchTxnById = async (id: string): Promise<Txn | undefined | Error> => {
     try {
       const txn: Txn | undefined = await db.get(
         "SELECT * FROM transactions WHERE source_tx_id = ?",
@@ -205,7 +205,7 @@ export const TransactionsRepository = (db: Db) => {
     checkRepositoryExists,
     deleteRepositoryForRebuild,
     sumSatsAmount,
-    fetchTxn,
+    fetchTxnById,
     fetchAllTxnsAscAndCalculate,
     fetchLatestCalc,
     persistManyTxns,
