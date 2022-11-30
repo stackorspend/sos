@@ -66,7 +66,7 @@ $ yarn start
 
   This is currently returned in ascending order because it is also how we do our stack price calcs.
 
-- [ ] **Implement simple wrappers for send/receive LN methods**
+- [x] **Implement simple wrappers for send/receive LN methods**
 
   Will be a very simple wrapper on the graphql mutations.
 
@@ -76,4 +76,4 @@ $ yarn start
 
 - [ ] **Implement simple wrappers for send/receive onchain methods**
 
-  Will be a very simple wrapper on the graphql mutations.
+  Will be a very simple wrapper on the graphql mutations. Should be done after onchain-pending txns reconciliation is implemented.
