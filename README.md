@@ -62,17 +62,17 @@ $ yarn start
 
   These are currently calculated inside the `fetchTxns` method.
 
-- [ ] **Fix calcs to not factor failed txn pairs**
-
-  The aggregates & stack_price_with_pl are already covered by the SELECT (`OVER(ORDER BY timestamp)`). The without_pl calcs need work.
-
-- [ ] **Add pagination for the `fetchTxns` endpoint to be able to call it in descending order in chunks**
+- [x] **Add pagination for the `fetchTxns` endpoint to be able to call it in descending order in chunks**
 
   This is currently returned in ascending order because it is also how we do our stack price calcs.
 
 - [ ] **Implement simple wrappers for send/receive LN methods**
 
   Will be a very simple wrapper on the graphql mutations.
+
+- [ ] **Fix calcs to not factor failed txn pairs**
+
+  The aggregates & stack_price_with_pl are already covered by the SELECT (`OVER(ORDER BY timestamp)`). The without_pl calcs need work.
 
 - [ ] **Implement simple wrappers for send/receive onchain methods**
 
