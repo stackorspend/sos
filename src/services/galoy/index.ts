@@ -14,8 +14,42 @@ const galoyRequestsPath = "./src/services/galoy/requests"
 
 const Transactions = fs.readFileSync(`${galoyRequestsPath}/transactions.gql`, "utf8")
 const Balance = fs.readFileSync(`${galoyRequestsPath}/balance.gql`, "utf8")
+const LnSendPayment = fs.readFileSync(`${galoyRequestsPath}/ln-send-payment.gql`, "utf8")
+const LnSendPaymentWithAmount = fs.readFileSync(
+  `${galoyRequestsPath}/ln-send-payment-with-amount.gql`,
+  "utf8",
+)
 
-export const Galoy = () => {
+export const Galoy = async () => {
+  const getBtcWalletId = async () => {
+    const query = {
+      query: Balance,
+    }
+
+    const {
+      data: { data, errors },
+    }: { data: BALANCE_RESPONSE } = await axios.post(API_ENDPOINT, query, {
+      headers: defaultHeaders,
+    })
+
+    const errs = errors || data.me.errors
+    if (errs && errs.length) {
+      return new Error(errs[0].message || JSON.stringify(errs))
+    }
+
+    const {
+      me: {
+        defaultAccount: {
+          wallets: [{ id: walletId }],
+        },
+      },
+    } = data
+
+    return walletId
+  }
+  const btcWalletId = await getBtcWalletId()
+  if (btcWalletId instanceof Error) return btcWalletId
+
   const balance = async () => {
     console.log("Fetching galoy wallet balance...")
 
@@ -28,6 +62,11 @@ export const Galoy = () => {
     }: { data: BALANCE_RESPONSE } = await axios.post(API_ENDPOINT, query, {
       headers: defaultHeaders,
     })
+
+    const errs = errors || data.me.errors
+    if (errs && errs.length) {
+      return new Error(errs[0].message || JSON.stringify(errs))
+    }
 
     const {
       me: {
@@ -74,8 +113,83 @@ export const Galoy = () => {
     return { transactions: edges, lastCursor: cursor, hasNextPage }
   }
 
+  const sendLnPayment = async ({ withAmountPaymentRequest: paymentRequest, memo }) => {
+    // TODO: validate if paymentRequest has amount
+
+    const query = {
+      query: LnSendPayment,
+      variables: {
+        input: {
+          walletId: btcWalletId,
+          paymentRequest,
+          memo,
+        },
+      },
+    }
+
+    const {
+      data: { data, errors },
+    }: { data: LN_SEND_PAYMENT_RESPONSE } = await axios.post(API_ENDPOINT, query, {
+      headers: defaultHeaders,
+    })
+    const errs = errors || data.lnInvoicePaymentSend.errors
+    if (errs && errs.length) {
+      return new Error(errs[0].message || JSON.stringify(errs))
+    }
+
+    const {
+      lnInvoicePaymentSend: { status },
+    } = data
+
+    // TODO: populate paymentHash
+    return { status, paymentHash: undefined, preImage: null }
+  }
+
+  const sendLnPaymentWithAmount = async ({
+    noAmountPaymentRequest: paymentRequest,
+    amount,
+    memo,
+  }) => {
+    // TODO: validate if paymentRequest has no amount
+
+    const query = {
+      query: LnSendPaymentWithAmount,
+      variables: {
+        input: {
+          walletId: btcWalletId,
+          paymentRequest,
+          amount,
+          memo,
+        },
+      },
+    }
+
+    const {
+      data: { data, errors },
+    }: { data: LN_SEND_PAYMENT_WITH_AMOUNT_RESPONSE } = await axios.post(
+      API_ENDPOINT,
+      query,
+      {
+        headers: defaultHeaders,
+      },
+    )
+    const errs = errors || data.lnNoAmountInvoicePaymentSend.errors
+    if (errs && errs.length) {
+      return new Error(errs[0].message || JSON.stringify(errs))
+    }
+
+    const {
+      lnNoAmountInvoicePaymentSend: { status },
+    } = data
+
+    // TODO: populate paymentHash
+    return { status, paymentHash: undefined, preImage: null }
+  }
+
   return {
     balance,
     fetchTransactionsPage,
+    sendLnPayment,
+    sendLnPaymentWithAmount,
   }
 }

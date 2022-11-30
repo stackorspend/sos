@@ -22,6 +22,11 @@ export const syncLatestTxns = async ({
 
   const txnsRepo = TransactionsRepository(db)
 
+  const galoy = await Galoy()
+  if (galoy instanceof Error) {
+    return galoy
+  }
+
   if (rebuild) txnsRepo.deleteRepositoryForRebuild()
 
   const data: INPUT_TXN[] = []
@@ -31,7 +36,7 @@ export const syncLatestTxns = async ({
   let finish = false
   while ((rescanForMissing || !finish) && hasNextPage && lastCursor !== false) {
     // Fetch from source
-    ;({ transactions, lastCursor, hasNextPage } = await Galoy().fetchTransactionsPage({
+    ;({ transactions, lastCursor, hasNextPage } = await galoy.fetchTransactionsPage({
       first: pageSize,
       cursorFetchAfter: lastCursor,
     }))
@@ -75,7 +80,7 @@ export const syncLatestTxns = async ({
   //  - handle pending transactions that disappear later (e.g. RBF)
   //  - handle pending incoming onchain transactions that get replaced when confirmed
   const sumFromLocal = await txnsRepo.sumSatsAmount()
-  const balanceFromSource = await Galoy().balance()
+  const balanceFromSource = await galoy.balance()
   if (sumFromLocal !== balanceFromSource) {
     return new LocalBalanceDoesNotMatchSourceError(
       JSON.stringify({ sumFromLocal, balanceFromSource }),

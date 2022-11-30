@@ -1,4 +1,10 @@
-import { fetchTxns, syncLatestTxns, getStackCost } from "./src/app"
+import {
+  fetchTxns,
+  syncLatestTxns,
+  getStackCost,
+  payNoAmountLnInvoice,
+  payWithAmountLnInvoice,
+} from "./src/app"
 
 import { getDb, TransactionsRepository } from "./src/services/sqlite"
 
@@ -12,8 +18,8 @@ export const StackorSpend = () => {
     // checkPlannedStackTxn,
     // checkPlannedSpendTxn,
 
-    // payNoAmountLnInvoice,
-    // payWithAmountLnInvoice,
+    payNoAmountLnInvoice,
+    payWithAmountLnInvoice,
     // receiveLnNoAmount,
     // receiveLnWithAmount,
 

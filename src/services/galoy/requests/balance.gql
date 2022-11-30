@@ -3,6 +3,7 @@ query me {
     defaultAccount {
       wallets {
         ... on BTCWallet {
+          id
           balance
           pendingIncomingBalance
         }
