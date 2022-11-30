@@ -7,6 +7,9 @@ import { Galoy } from "../services/galoy"
 
 import { TransactionsRepository } from "../services/sqlite"
 
+export const IMPORT_PAGE_SIZE = 100
+export const SYNC_PAGE_SIZE = 10
+
 export const syncLatestTxns = async ({
   db,
   pageSize,

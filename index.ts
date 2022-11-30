@@ -4,6 +4,8 @@ import {
   getStackCost,
   payNoAmountLnInvoice,
   payWithAmountLnInvoice,
+  SYNC_PAGE_SIZE,
+  IMPORT_PAGE_SIZE,
 } from "./src/app"
 
 import { getDb, TransactionsRepository } from "./src/services/sqlite"
@@ -30,9 +32,6 @@ export const StackorSpend = () => {
 
 // Demo API usage
 const main = async () => {
-  const IMPORT_PAGE_SIZE = 100
-  const SYNC_PAGE_SIZE = 10
-
   const sos = StackorSpend()
   const db = await getDb()
 
