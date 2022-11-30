@@ -25,3 +25,13 @@ INSERT INTO txn_calculations (
     :aggregate_display_currency_amount_less_pl,
     :stack_price_without_pl
 )
+  ON CONFLICT(source_tx_id) DO UPDATE SET
+    display_currency_amount = :display_currency_amount,
+    aggregate_sats = :aggregate_sats,
+    aggregate_display_currency_amount = :aggregate_display_currency_amount,
+    stack_price_with_pl_included = :stack_price_with_pl_included,
+    display_currency_amount_less_pl = :display_currency_amount_less_pl,
+    display_currency_pl = :display_currency_pl,
+    display_currency_pl_percentage = :display_currency_pl_percentage,
+    aggregate_display_currency_amount_less_pl = :aggregate_display_currency_amount_less_pl,
+    stack_price_without_pl = :stack_price_without_pl

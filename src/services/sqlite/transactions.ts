@@ -14,7 +14,7 @@ const CREATE_CALCS_TABLE = fs.readFileSync(
   "utf8",
 )
 const INSERT_TXN = fs.readFileSync(`${REQUESTS_DIR}/insert-txn.sql`, "utf8")
-const INSERT_CALC = fs.readFileSync(`${REQUESTS_DIR}/insert-calc.sql`, "utf8")
+const INSERT_CALC = fs.readFileSync(`${REQUESTS_DIR}/upsert-calc.sql`, "utf8")
 
 const SELECT_LATEST_CALC = `
   SELECT * FROM ${CALCS_TABLE}
