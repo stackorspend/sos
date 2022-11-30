@@ -50,12 +50,45 @@ type LN_SEND_PAYMENT_WITH_AMOUNT_RESPONSE = {
   data: {
     lnNoAmountInvoicePaymentSend: {
       status: string
-      errors: [
-        {
-          message: string
-          code: string
-        },
-      ]
+      errors: {
+        message: string
+        code: string
+      }[]
+    }
+  }
+}
+
+type LN_WITH_AMOUNT_INVOICE_CREATE_RESPONSE = {
+  errors
+  data: {
+    lnInvoiceCreate: {
+      invoice: {
+        paymentRequest: string
+        paymentHash: string
+        paymentSecret: string
+        satoshis: number
+      }
+      errors: {
+        message: string
+        code: string
+      }[]
+    }
+  }
+}
+
+type LN_NO_AMOUNT_INVOICE_CREATE_RESPONSE = {
+  errors
+  data: {
+    lnNoAmountInvoiceCreate: {
+      invoice: {
+        paymentRequest: string
+        paymentHash: string
+        paymentSecret: string
+      }
+      errors: {
+        message: string
+        code: string
+      }[]
     }
   }
 }

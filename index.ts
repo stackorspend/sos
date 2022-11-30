@@ -4,6 +4,8 @@ import {
   getStackCost,
   payNoAmountLnInvoice,
   payWithAmountLnInvoice,
+  receiveLnNoAmount,
+  receiveLnWithAmount,
   SYNC_PAGE_SIZE,
   IMPORT_PAGE_SIZE,
 } from "./src/app"
@@ -22,8 +24,8 @@ export const StackorSpend = () => {
 
     payNoAmountLnInvoice,
     payWithAmountLnInvoice,
-    // receiveLnNoAmount,
-    // receiveLnWithAmount,
+    receiveLnNoAmount,
+    receiveLnWithAmount,
 
     // payOnChainAddress,
     // receiveOnChain,
@@ -60,6 +62,13 @@ const main = async () => {
   console.log("Current (DCA'd) stack cost is:", stackCost)
 
   await db.close()
+
+  // Test invoice generation
+  const withAmountInvoice = await sos.receiveLnWithAmount({ amount: 1, memo: "" })
+  console.log({ withAmountInvoice })
+
+  const noAmountInvoice = await sos.receiveLnNoAmount({ memo: "" })
+  console.log({ noAmountInvoice })
 }
 
 main()
