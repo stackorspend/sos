@@ -15,5 +15,8 @@ export const fetchTxns = async ({
   })
   if (txns instanceof Error) return txns
 
-  return { cursor: txns[txns.length - 1].source_tx_id, txns }
+  return {
+    cursor: txns && txns.length ? txns[txns.length - 1].source_tx_id : after,
+    txns: txns.map(mapTxns),
+  }
 }
