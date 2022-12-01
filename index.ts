@@ -12,6 +12,8 @@ import {
 
 import { getDb, TransactionsRepository } from "./src/services/sqlite"
 
+import util from "util"
+
 // API definition
 export const StackorSpend = () => {
   return {
@@ -59,10 +61,12 @@ const main = async () => {
   const pageOne = await sos.fetchTxns({ db, first: 14 })
   if (pageOne instanceof Error) throw pageOne
   const { cursor, txns } = pageOne
-  console.log("Page 1 txns:", txns)
+  console.log("Page 1 txns:")
+  console.log(util.inspect(txns, { depth: null, colors: true }))
   console.log("Page 1 cursor:", cursor)
   const pageTwo = await sos.fetchTxns({ db, first: 12, after: cursor })
-  console.log("Page 2:", pageTwo)
+  console.log("Page 2:")
+  console.log(util.inspect(pageTwo, { depth: null, colors: true }))
 
   // ==========
   // Step 3: Get figure for stack cost

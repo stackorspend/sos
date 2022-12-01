@@ -32,16 +32,20 @@ const mapTxns = (txn) => {
 
   return {
     timestamp: txn.timestamp,
-    sourceId: txn.source_tx_id,
     source: txn.source_name,
+    sourceId: txn.source_tx_id,
     txStatus: txn.tx_status,
-    satsAmountWithFee,
-    satsAmount,
-    satsFee,
-    fiatAmountWithFee,
-    fiatAmount,
-    fiatFee,
-    fiatUnit: txn.fiat_code,
+    sats: {
+      amountWithFee: satsAmountWithFee,
+      amount: satsAmount,
+      fee: satsFee,
+    },
+    fiat: {
+      amountWithFee: fiatAmountWithFee,
+      amount: fiatAmount,
+      fee: fiatFee,
+      code: txn.fiat_code,
+    },
     txPrice: txn.fiat_per_sat / 10 ** 4,
     stackAvgPrice: txn.stack_price_without_pl,
     gainLoss: txn.fiat_pl_percentage,
