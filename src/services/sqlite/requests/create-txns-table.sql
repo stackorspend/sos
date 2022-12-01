@@ -5,9 +5,15 @@ CREATE TABLE IF NOT EXISTS transactions (
     fiat_per_sat INTEGER NOT NULL,
     fiat_per_sat_offset INTEGER NOT NULL,
     fiat_code TEXT NOT NULL,
-    fiat_amount REAL GENERATED ALWAYS AS (
+    fiat_amount_with_fee REAL GENERATED ALWAYS AS (
         ROUND(
             sats_amount_with_fee * fiat_per_sat / POWER(10, fiat_per_sat_offset),
+            4
+        )
+    ) STORED,
+    fiat_fee REAL GENERATED ALWAYS AS (
+        ROUND(
+            sats_fee * fiat_per_sat / POWER(10, fiat_per_sat_offset),
             4
         )
     ) STORED,

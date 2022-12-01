@@ -4,13 +4,14 @@ const PRICE_FRAG = `fiat_per_sat / POWER(10, fiat_per_sat_offset)`
 const FIAT_TOTAL_FRAG = `sats_amount_with_fee * ${PRICE_FRAG}`
 const AGG_FIAT_WITH_PL_FRAG = `SUM(${FIAT_TOTAL_FRAG}) OVER(ORDER BY timestamp)`
 
-const DISPLAY_AMOUNT = `printf("%.2f", fiat_amount) AS amount`
+const DISPLAY_AMOUNT = `printf("%.2f", fiat_amount_with_fee) AS amount`
 
 export const BASE_TXNS_ASC_SELECT = `
   SELECT
     source_name,
     source_tx_id,
-    fiat_amount,
+    fiat_amount_with_fee,
+    fiat_fee,
 
     timestamp,
     sats_amount_with_fee,
