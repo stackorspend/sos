@@ -4,6 +4,8 @@ type INPUT_TXN = {
   sats: number
   price: number
   status: string
+  paymentHash: string | undefined
+  txId: string | undefined
 }
 
 type Txn = {
@@ -16,6 +18,13 @@ type Txn = {
       base: number
     }
     status: string
+    initiationVia: {
+      paymentHash?: string
+      address?: string
+    }
+    settlementVia: {
+      transactionHash?: string
+    }
   }
 }
 

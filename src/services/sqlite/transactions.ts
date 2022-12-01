@@ -220,6 +220,8 @@ export const TransactionsRepository = (db: Db) => {
           [":display_currency_code"]: "USD",
           [":source_name"]: "galoy",
           [":source_tx_id"]: txn.id,
+          [":ln_payment_hash"]: txn.paymentHash,
+          [":onchain_tx_id"]: txn.txId,
           // TODO: figure how to check & finalize pending txns
           [":tx_status"]: txn.status,
         })

@@ -61,6 +61,8 @@ export const syncLatestTxns = async ({
         settlementPrice: { base },
         createdAt: timestamp,
         status,
+        initiationVia: { paymentHash, address },
+        settlementVia: { transactionHash: txId },
       } = tx.node
 
       const txInDb = await txnsRepo.fetchTxnById(id)
@@ -72,11 +74,19 @@ export const syncLatestTxns = async ({
         continue
       }
       console.log(`Writing new txn '${id}'...`)
-      data.push({ id, timestamp, sats: settlementAmount, price: base / 10 ** 6, status })
+      data.push({
+        id,
+        timestamp,
+        sats: settlementAmount,
+        price: base / 10 ** 6,
+        status,
+        paymentHash,
+        txId,
+      })
     }
   }
   // Persist locally
-  await txnsRepo.persistManyTxns(data)
+  const res = await txnsRepo.persistManyTxns(data)
 
   // Check balance
   // Note, figure how to (default is rescanForMissing):

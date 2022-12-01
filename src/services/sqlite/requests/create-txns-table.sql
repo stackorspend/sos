@@ -12,5 +12,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     ) STORED,
     source_name TEXT NOT NULL,
     source_tx_id TEXT NOT NULL UNIQUE,
-    tx_status TEXT NOT NULL
+    tx_status TEXT NOT NULL,
+    ln_payment_hash TEXT,
+    onchain_tx_id TEXT
 )

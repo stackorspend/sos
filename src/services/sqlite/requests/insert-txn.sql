@@ -6,6 +6,8 @@ INSERT INTO transactions (
     display_currency_code,
     source_name,
     source_tx_id,
+    ln_payment_hash,
+    onchain_tx_id,
     tx_status
 ) VALUES (
     :sats_amount,    
@@ -15,5 +17,7 @@ INSERT INTO transactions (
     :display_currency_code,
     :source_name,
     :source_tx_id,
+    :ln_payment_hash,
+    :onchain_tx_id,
     :tx_status
 )
