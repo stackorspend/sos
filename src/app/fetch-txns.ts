@@ -22,12 +22,11 @@ export const fetchTxns = async ({
 }
 
 const mapTxns = (txn) => {
-  const { sats_amount_with_fee: satsAmountWithFee } = txn
-  const satsFee = satsAmountWithFee < 0 ? -txn.sats_fee : txn.sats_fee
+  // TODO: if txn is 'canceled' then set fee to '0'
+  const { sats_amount_with_fee: satsAmountWithFee, sats_fee: satsFee } = txn
   const satsAmount = Number((satsAmountWithFee - satsFee).toFixed(4))
 
-  const { fiat_amount_with_fee: fiatAmountWithFee } = txn
-  const fiatFee = fiatAmountWithFee < 0 ? -txn.fiat_fee : txn.fiat_fee
+  const { fiat_amount_with_fee: fiatAmountWithFee, fiat_fee: fiatFee } = txn
   const fiatAmount = Number((fiatAmountWithFee - fiatFee).toFixed(4))
 
   return {

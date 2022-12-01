@@ -79,7 +79,7 @@ export const syncLatestTxns = async ({
         id,
         timestamp,
         sats: settlementAmount,
-        satsFee: settlementFee,
+        satsFee: -settlementFee,
         price: base / 10 ** 6,
         status,
         paymentHash,
