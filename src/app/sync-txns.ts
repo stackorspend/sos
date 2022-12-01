@@ -115,12 +115,12 @@ export const syncLatestTxns = async ({
       source_tx_id: row.source_tx_id,
       timestamp: row.timestamp,
       aggregate_sats: row.agg_sats,
-      aggregate_display_currency_amount: row.agg_fiat_with_pl,
+      aggregate_fiat_amount: row.agg_fiat_with_pl,
       stack_price_with_pl_included: row.avg_price_with_pl,
-      display_currency_amount_less_pl: row.fiat_no_pl,
-      display_currency_pl: row.fiat_pl,
-      display_currency_pl_percentage: row.pl_pct,
-      aggregate_display_currency_amount_less_pl: row.agg_fiat_no_pl,
+      fiat_amount_less_pl: row.fiat_no_pl,
+      fiat_pl: row.fiat_pl,
+      fiat_pl_percentage: row.pl_pct,
+      aggregate_fiat_amount_less_pl: row.agg_fiat_no_pl,
       stack_price_without_pl: row.avg_price_no_pl,
     }
     rowsToPersist.push(rowToPersist)

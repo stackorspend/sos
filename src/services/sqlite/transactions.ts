@@ -215,9 +215,9 @@ export const TransactionsRepository = (db: Db) => {
         await stmt.run({
           [":sats_amount"]: txn.sats,
           [":timestamp"]: new Date(txn.timestamp * 1000).toISOString(),
-          [":display_currency_per_sat"]: Math.round(txn.price * 10 ** 4),
-          [":display_currency_offset"]: 12,
-          [":display_currency_code"]: "USD",
+          [":fiat_per_sat"]: Math.round(txn.price * 10 ** 4),
+          [":fiat_per_sat_offset"]: 12,
+          [":fiat_code"]: "USD",
           [":source_name"]: "galoy",
           [":source_tx_id"]: txn.id,
           [":ln_payment_hash"]: txn.paymentHash,
@@ -252,13 +252,12 @@ export const TransactionsRepository = (db: Db) => {
           [":source_tx_id"]: row.source_tx_id,
           [":timestamp"]: row.timestamp,
           [":aggregate_sats"]: row.aggregate_sats,
-          [":aggregate_display_currency_amount"]: row.aggregate_display_currency_amount,
+          [":aggregate_fiat_amount"]: row.aggregate_fiat_amount,
           [":stack_price_with_pl_included"]: row.stack_price_with_pl_included,
-          [":display_currency_amount_less_pl"]: row.display_currency_amount_less_pl,
-          [":display_currency_pl"]: row.display_currency_pl,
-          [":display_currency_pl_percentage"]: row.display_currency_pl_percentage,
-          [":aggregate_display_currency_amount_less_pl"]:
-            row.aggregate_display_currency_amount_less_pl,
+          [":fiat_amount_less_pl"]: row.fiat_amount_less_pl,
+          [":fiat_pl"]: row.fiat_pl,
+          [":fiat_pl_percentage"]: row.fiat_pl_percentage,
+          [":aggregate_fiat_amount_less_pl"]: row.aggregate_fiat_amount_less_pl,
           [":stack_price_without_pl"]: row.stack_price_without_pl,
         })
       }
