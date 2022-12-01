@@ -21,6 +21,7 @@ export const StackorSpend = () => {
 
     fetchTxns,
     getStackCost,
+    // getCurrentPrice,
     // checkPlannedStackTxn,
     // checkPlannedSpendTxn,
 
@@ -57,22 +58,28 @@ const main = async () => {
   // ==========
   // Step 2: Retrieve synced transactions in pages
   // ==========
-  console.log("Fetching transactions from local db...")
-  const pageOne = await sos.fetchTxns({ db, first: 14 })
-  if (pageOne instanceof Error) throw pageOne
-  const { cursor, txns } = pageOne
-  console.log("Page 1 txns:")
-  console.log(util.inspect(txns, { depth: null, colors: true }))
-  console.log("Page 1 cursor:", cursor)
-  const pageTwo = await sos.fetchTxns({ db, first: 12, after: cursor })
-  console.log("Page 2:")
-  console.log(util.inspect(pageTwo, { depth: null, colors: true }))
+  const step2 = true
+  if (step2) {
+    console.log("Fetching transactions from local db...")
+    const pageOne = await sos.fetchTxns({ db, first: 4 })
+    if (pageOne instanceof Error) throw pageOne
+    const { cursor, txns } = pageOne
+    console.log("Page 1 txns:")
+    console.log(util.inspect(txns, { depth: null, colors: true }))
+    console.log("Page 1 cursor:", cursor)
+    const pageTwo = await sos.fetchTxns({ db, first: 2, after: cursor })
+    console.log("Page 2:")
+    console.log(util.inspect(pageTwo, { depth: null, colors: true }))
+  }
 
   // ==========
   // Step 3: Get figure for stack cost
   // ==========
-  const stackCost = await sos.getStackCost(db)
-  console.log("Current (DCA'd) stack cost is:", stackCost)
+  const step3 = true
+  if (step3) {
+    const stackCost = await sos.getStackCost(db)
+    console.log("Current (DCA'd) stack cost is:", stackCost)
+  }
 
   // ==========
   // Step 4: Test (testnet) invoice send
