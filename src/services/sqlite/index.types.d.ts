@@ -2,6 +2,7 @@ type INPUT_TXN = {
   id: string
   timestamp: number
   sats: number
+  satsFee: number
   price: number
   status: string
   paymentHash: string | undefined
@@ -14,6 +15,7 @@ type Txn = {
     id: string
     createdAt: number
     settlementAmount: number
+    settlementFee: number
     settlementPrice: {
       base: number
     }

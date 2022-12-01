@@ -1,5 +1,6 @@
 INSERT INTO transactions (
-    sats_amount,
+    sats_amount_with_fee,
+    sats_fee,
     timestamp,
     fiat_per_sat,
     fiat_per_sat_offset,
@@ -10,7 +11,8 @@ INSERT INTO transactions (
     onchain_tx_id,
     tx_status
 ) VALUES (
-    :sats_amount,    
+    :sats_amount_with_fee,
+    :sats_fee,
     :timestamp,
     :fiat_per_sat,
     :fiat_per_sat_offset,

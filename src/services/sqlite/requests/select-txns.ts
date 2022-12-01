@@ -1,7 +1,7 @@
-const AGG_SATS_FRAG = `SUM(sats_amount) OVER(ORDER BY timestamp)`
+const AGG_SATS_FRAG = `SUM(sats_amount_with_fee) OVER(ORDER BY timestamp)`
 const PRICE_PER_BTC_FRAG = `fiat_per_sat / POWER(10, fiat_per_sat_offset - 8)`
 const PRICE_FRAG = `fiat_per_sat / POWER(10, fiat_per_sat_offset)`
-const FIAT_TOTAL_FRAG = `sats_amount * ${PRICE_FRAG}`
+const FIAT_TOTAL_FRAG = `sats_amount_with_fee * ${PRICE_FRAG}`
 const AGG_FIAT_WITH_PL_FRAG = `SUM(${FIAT_TOTAL_FRAG}) OVER(ORDER BY timestamp)`
 
 const DISPLAY_AMOUNT = `printf("%.2f", fiat_amount) AS amount`
@@ -13,7 +13,8 @@ export const BASE_TXNS_ASC_SELECT = `
     fiat_amount,
 
     timestamp,
-    sats_amount,
+    sats_amount_with_fee,
+    sats_fee,
     ${PRICE_PER_BTC_FRAG} as price,
     ${AGG_SATS_FRAG} as agg_sats,
     '' as _,
@@ -21,7 +22,7 @@ export const BASE_TXNS_ASC_SELECT = `
     ${FIAT_TOTAL_FRAG} as fiat_with_pl,
     ${AGG_FIAT_WITH_PL_FRAG} as agg_fiat_with_pl,
     CASE
-      WHEN NOT sats_amount = 0 THEN ${AGG_FIAT_WITH_PL_FRAG} / ${AGG_SATS_FRAG} * POWER(10,8)
+      WHEN NOT sats_amount_with_fee = 0 THEN ${AGG_FIAT_WITH_PL_FRAG} / ${AGG_SATS_FRAG} * POWER(10,8)
       ELSE null
     END as avg_price_with_pl,
     '' as __
@@ -35,18 +36,18 @@ export const handleRow = ({ acc, prev, row }: { acc; prev; row }) => {
   let { avg_price_no_pl, agg_fiat_no_pl } = acc
   let { prev_agg_sats, prev_avg_price } = prev
 
-  const { sats_amount, price, agg_sats, fiat_with_pl } = row
+  const { sats_amount_with_fee, price, agg_sats, fiat_with_pl } = row
   let fiat_no_pl
-  if (sats_amount > 0) {
+  if (sats_amount_with_fee > 0) {
     // isBuy
-    fiat_no_pl = (sats_amount / 10 ** 8) * price
+    fiat_no_pl = (sats_amount_with_fee / 10 ** 8) * price
     agg_fiat_no_pl += fiat_no_pl
     avg_price_no_pl = agg_fiat_no_pl / (agg_sats / 10 ** 8)
 
     prev_avg_price = avg_price_no_pl
   } else {
     // isSell
-    fiat_no_pl = sats_amount * (agg_fiat_no_pl / prev_agg_sats)
+    fiat_no_pl = sats_amount_with_fee * (agg_fiat_no_pl / prev_agg_sats)
     agg_fiat_no_pl += fiat_no_pl
     avg_price_no_pl = prev_avg_price
 

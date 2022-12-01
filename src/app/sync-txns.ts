@@ -58,6 +58,7 @@ export const syncLatestTxns = async ({
       const {
         id,
         settlementAmount,
+        settlementFee,
         settlementPrice: { base },
         createdAt: timestamp,
         status,
@@ -78,6 +79,7 @@ export const syncLatestTxns = async ({
         id,
         timestamp,
         sats: settlementAmount,
+        satsFee: settlementFee,
         price: base / 10 ** 6,
         status,
         paymentHash,

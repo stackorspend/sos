@@ -21,15 +21,23 @@ export const fetchTxns = async ({
   }
 }
 
-const mapTxns = (txn) => ({
-  timestamp: txn.timestamp,
-  sourceId: txn.source_tx_id,
-  source: txn.source_name,
-  txStatus: txn.tx_status,
-  sats: txn.sats_amount,
-  fiat: txn.fiat_amount,
-  fiatUnit: txn.fiat_code,
-  txPrice: txn.fiat_per_sat / 10 ** 4,
-  stackAvgPrice: txn.stack_price_without_pl,
-  gainLoss: txn.fiat_pl_percentage,
-})
+const mapTxns = (txn) => {
+  const { sats_amount_with_fee: satsAmountWithFee } = txn
+  const satsFee = satsAmountWithFee < 0 ? -txn.sats_fee : txn.sats_fee
+  const satsAmount = satsAmountWithFee - satsFee
+
+  return {
+    timestamp: txn.timestamp,
+    sourceId: txn.source_tx_id,
+    source: txn.source_name,
+    txStatus: txn.tx_status,
+    satsAmountWithFee,
+    satsAmount,
+    satsFee,
+    fiat: txn.fiat_amount,
+    fiatUnit: txn.fiat_code,
+    txPrice: txn.fiat_per_sat / 10 ** 4,
+    stackAvgPrice: txn.stack_price_without_pl,
+    gainLoss: txn.fiat_pl_percentage,
+  }
+}

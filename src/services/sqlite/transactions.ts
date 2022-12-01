@@ -27,7 +27,7 @@ const TXNS_JOIN = `
   SELECT * FROM transactions
   INNER JOIN txn_calculations
   ON transactions.source_tx_id = txn_calculations.source_tx_id
-  ORDER BY timestamp DESC, sats_amount DESC
+  ORDER BY timestamp DESC, sats_amount_with_fee DESC
   LIMIT :first;
 `
 
@@ -37,10 +37,10 @@ const TXNS_JOIN_PAGE = `
   ON transactions.source_tx_id = txn_calculations.source_tx_id
   WHERE (
     transactions.timestamp = ( SELECT transactions.timestamp FROM transactions WHERE source_tx_id = :after)
-    AND sats_amount < ( SELECT sats_amount FROM transactions WHERE source_tx_id = :after)
+    AND sats_amount_with_fee < ( SELECT sats_amount_with_fee FROM transactions WHERE source_tx_id = :after)
   )
   OR transactions.timestamp < ( SELECT transactions.timestamp FROM transactions WHERE source_tx_id = :after)
-  ORDER BY transactions.timestamp DESC, sats_amount DESC
+  ORDER BY transactions.timestamp DESC, sats_amount_with_fee DESC
   LIMIT :first
 `
 
@@ -90,7 +90,7 @@ export const TransactionsRepository = (db: Db) => {
   }
 
   const sumSatsAmount = async (): Promise<number | Error> => {
-    const SUM_SATS_AMOUNT = `SELECT SUM(sats_amount) as sum FROM transactions;`
+    const SUM_SATS_AMOUNT = `SELECT SUM(sats_amount_with_fee) as sum FROM transactions;`
     try {
       const { sum } = await db.get(SUM_SATS_AMOUNT)
       return sum || 0
@@ -126,7 +126,7 @@ export const TransactionsRepository = (db: Db) => {
   const fetchTxns = async ({ first, after }: { first?: number; after?: string }) => {
     try {
       // Note: These potentially break if there are more than one records with
-      //       the same 'sats_amount' and 'timestamp' values (which should never happen)
+      //       the same 'sats_amount_with_fee' and 'timestamp' values (which should never happen)
       const rows = after
         ? await db.all(TXNS_JOIN_PAGE, {
             [":first"]: first || DEFAULT_PAGE_SIZE,
@@ -213,7 +213,8 @@ export const TransactionsRepository = (db: Db) => {
       const stmt = await db.prepare(INSERT_TXN)
       for (const txn of rows) {
         await stmt.run({
-          [":sats_amount"]: txn.sats,
+          [":sats_amount_with_fee"]: txn.sats,
+          [":sats_fee"]: txn.satsFee,
           [":timestamp"]: new Date(txn.timestamp * 1000).toISOString(),
           [":fiat_per_sat"]: Math.round(txn.price * 10 ** 4),
           [":fiat_per_sat_offset"]: 12,

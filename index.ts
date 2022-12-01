@@ -56,12 +56,12 @@ const main = async () => {
   // Step 2: Retrieve synced transactions in pages
   // ==========
   console.log("Fetching transactions from local db...")
-  const pageOne = await sos.fetchTxns({ db, first: 3 })
+  const pageOne = await sos.fetchTxns({ db, first: 14 })
   if (pageOne instanceof Error) throw pageOne
   const { cursor, txns } = pageOne
   console.log("Page 1 txns:", txns)
   console.log("Page 1 cursor:", cursor)
-  const pageTwo = await sos.fetchTxns({ db, first: 2, after: cursor })
+  const pageTwo = await sos.fetchTxns({ db, first: 12, after: cursor })
   console.log("Page 2:", pageTwo)
 
   // ==========
