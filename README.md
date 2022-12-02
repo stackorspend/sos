@@ -53,7 +53,7 @@ export GALOY_JWT="<your-token-here>"
 
 ```
 $ yarn install
-$ yarn start
+$ yarn demo
 ```
 
 ## Open tasks
