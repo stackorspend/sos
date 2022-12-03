@@ -9,9 +9,11 @@ import {
 } from "./src/app"
 
 // API definition
-export const StackorSpend = () => {
+export const StackorSpend = (config: {
+  galoy: { endpoint: string; token: string }
+}): StackorSpend => {
   return {
-    syncTxns: syncLatestTxns,
+    syncTxns: (args) => syncLatestTxns({ ...args, ...config }),
 
     fetchTxns,
     getStackCost,
@@ -19,10 +21,10 @@ export const StackorSpend = () => {
     // checkPlannedStackTxn,
     // checkPlannedSpendTxn,
 
-    payNoAmountLnInvoice,
-    payWithAmountLnInvoice,
-    receiveLnNoAmount,
-    receiveLnWithAmount,
+    payNoAmountLnInvoice: (args) => payNoAmountLnInvoice({ ...args, ...config }),
+    payWithAmountLnInvoice: (args) => payWithAmountLnInvoice({ ...args, ...config }),
+    receiveLnNoAmount: (args) => receiveLnNoAmount({ ...args, ...config }),
+    receiveLnWithAmount: (args) => receiveLnWithAmount({ ...args, ...config }),
 
     // payOnChainAddress,
     // receiveOnChain,

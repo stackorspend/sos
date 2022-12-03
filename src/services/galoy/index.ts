@@ -1,15 +1,6 @@
 import fs from "fs"
 import axios from "axios"
 
-const { API_ENDPOINT, GALOY_JWT } = process.env
-if (!API_ENDPOINT) throw new Error(`Missing 'API_ENDPOINT' env variable`)
-
-const defaultHeaders = {
-  "Accept": "application/json",
-  "Access-Control-Allow-Origin": "*",
-  "Content-Type": "application/json",
-  "Authorization": `Bearer ${GALOY_JWT}`,
-}
 const galoyRequestsPath = "./src/services/galoy/requests"
 
 const Transactions = fs.readFileSync(`${galoyRequestsPath}/transactions.gql`, "utf8")
@@ -28,7 +19,14 @@ const LnNoAmountInvoiceCreate = fs.readFileSync(
   "utf8",
 )
 
-export const Galoy = async () => {
+export const Galoy = async ({ endpoint, token }: GaloyConfig) => {
+  const defaultHeaders = {
+    "Accept": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  }
+
   const getBtcWalletId = async () => {
     const query = {
       query: Balance,
@@ -36,7 +34,7 @@ export const Galoy = async () => {
 
     const {
       data: { data, errors },
-    }: { data: BALANCE_RESPONSE } = await axios.post(API_ENDPOINT, query, {
+    }: { data: BALANCE_RESPONSE } = await axios.post(endpoint, query, {
       headers: defaultHeaders,
     })
 
@@ -67,7 +65,7 @@ export const Galoy = async () => {
 
     const {
       data: { data, errors },
-    }: { data: BALANCE_RESPONSE } = await axios.post(API_ENDPOINT, query, {
+    }: { data: BALANCE_RESPONSE } = await axios.post(endpoint, query, {
       headers: defaultHeaders,
     })
 
@@ -106,7 +104,7 @@ export const Galoy = async () => {
 
     const {
       data: { data, errors },
-    }: { data: TRANSACTION_RESPONSE } = await axios.post(API_ENDPOINT, query, {
+    }: { data: TRANSACTION_RESPONSE } = await axios.post(endpoint, query, {
       headers: defaultHeaders,
     })
 
@@ -137,7 +135,7 @@ export const Galoy = async () => {
 
     const {
       data: { data, errors },
-    }: { data: LN_SEND_PAYMENT_RESPONSE } = await axios.post(API_ENDPOINT, query, {
+    }: { data: LN_SEND_PAYMENT_RESPONSE } = await axios.post(endpoint, query, {
       headers: defaultHeaders,
     })
     const errs = errors || data.lnInvoicePaymentSend.errors
@@ -175,7 +173,7 @@ export const Galoy = async () => {
     const {
       data: { data, errors },
     }: { data: LN_SEND_PAYMENT_WITH_AMOUNT_RESPONSE } = await axios.post(
-      API_ENDPOINT,
+      endpoint,
       query,
       {
         headers: defaultHeaders,
@@ -215,7 +213,7 @@ export const Galoy = async () => {
     const {
       data: { data, errors },
     }: { data: LN_WITH_AMOUNT_INVOICE_CREATE_RESPONSE } = await axios.post(
-      API_ENDPOINT,
+      endpoint,
       query,
       {
         headers: defaultHeaders,
@@ -249,7 +247,7 @@ export const Galoy = async () => {
     const {
       data: { data, errors },
     }: { data: LN_NO_AMOUNT_INVOICE_CREATE_RESPONSE } = await axios.post(
-      API_ENDPOINT,
+      endpoint,
       query,
       {
         headers: defaultHeaders,

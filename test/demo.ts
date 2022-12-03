@@ -7,7 +7,11 @@ import util from "util"
 
 // Demo API usage
 const main = async () => {
-  const sos = StackorSpend()
+  const { API_ENDPOINT, GALOY_JWT } = process.env
+  if (!API_ENDPOINT) throw new Error(`Missing 'endpoint' env variable`)
+  if (!GALOY_JWT) throw new Error(`Missing 'token' env variable`)
+
+  const sos = StackorSpend({ galoy: { endpoint: API_ENDPOINT, token: GALOY_JWT } })
 
   const db = await getDb()
 
