@@ -5,6 +5,43 @@ import { getDb, TransactionsRepository } from "../src/services/sqlite"
 
 import util from "util"
 
+const sqliteDb = async (): Promise<SqliteDb> => {
+  const db = await getDb()
+
+  const create = async (query: string): Promise<void> => {
+    try {
+      await db.run(query)
+    } catch (err) {
+      throw err
+    }
+  }
+
+  const insert = async ({ query, row }: { query: string; row: any[] }): Promise<void> => {
+    try {
+      await db.run(query, ...row)
+    } catch (err) {
+      throw err
+    }
+  }
+
+  const select = async ({
+    query,
+    args = [],
+  }: {
+    query: string
+    args?: any[]
+  }): Promise<any[]> => {
+    try {
+      const res = await db.all(query, ...args)
+      return res
+    } catch (err) {
+      throw err
+    }
+  }
+
+  return { create, insert, select, db }
+}
+
 // Demo API usage
 const main = async () => {
   const { API_ENDPOINT, GALOY_JWT } = process.env
@@ -13,7 +50,7 @@ const main = async () => {
 
   const sos = StackorSpend({ galoy: { endpoint: API_ENDPOINT, token: GALOY_JWT } })
 
-  const db = await getDb()
+  const db = await sqliteDb()
 
   // ==========
   // Step 1: Sync transactions from Galoy source
@@ -92,7 +129,7 @@ const main = async () => {
     console.log({ noAmountInvoice })
   }
 
-  await db.close()
+  await db.db.close()
 }
 
 main()

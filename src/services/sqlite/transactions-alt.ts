@@ -1,7 +1,7 @@
 import fs from "fs"
 import { TableNotCreatedYetError, UnknownRepositoryError } from "../../domain/error"
 
-import { BASE_TXNS_ASC_SELECT, handleRow } from "./requests/select-txns"
+import { BASE_TXNS_ASC_SELECT, handleRow } from "./requests/select-txns-alt"
 
 const REQUESTS_DIR = "./src/services/sqlite/requests"
 
@@ -15,8 +15,8 @@ const CREATE_CALCS_TABLE = fs.readFileSync(
   `${REQUESTS_DIR}/create-txn-calcs-table.sql`,
   "utf8",
 )
-const INSERT_TXN = fs.readFileSync(`${REQUESTS_DIR}/insert-txn.sql`, "utf8")
-const INSERT_CALC = fs.readFileSync(`${REQUESTS_DIR}/upsert-calc.sql`, "utf8")
+const INSERT_TXN = fs.readFileSync(`${REQUESTS_DIR}/insert-txn-alt.sql`, "utf8")
+const INSERT_CALC = fs.readFileSync(`${REQUESTS_DIR}/upsert-calc-alt.sql`, "utf8")
 
 const SELECT_LATEST_CALC = `
   SELECT * FROM ${CALCS_TABLE}
@@ -28,7 +28,7 @@ const TXNS_JOIN = `
   INNER JOIN txn_calculations
   ON transactions.source_tx_id = txn_calculations.source_tx_id
   ORDER BY timestamp DESC, sats_amount_with_fee DESC
-  LIMIT :first;
+  LIMIT ?;
 `
 
 const TXNS_JOIN_PAGE = `
@@ -36,12 +36,12 @@ const TXNS_JOIN_PAGE = `
   INNER JOIN txn_calculations
   ON transactions.source_tx_id = txn_calculations.source_tx_id
   WHERE (
-    transactions.timestamp = ( SELECT transactions.timestamp FROM transactions WHERE source_tx_id = :after)
-    AND sats_amount_with_fee < ( SELECT sats_amount_with_fee FROM transactions WHERE source_tx_id = :after)
+    transactions.timestamp = ( SELECT transactions.timestamp FROM transactions WHERE source_tx_id = ?)
+    AND sats_amount_with_fee < ( SELECT sats_amount_with_fee FROM transactions WHERE source_tx_id = ?)
   )
-  OR transactions.timestamp < ( SELECT transactions.timestamp FROM transactions WHERE source_tx_id = :after)
+  OR transactions.timestamp < ( SELECT transactions.timestamp FROM transactions WHERE source_tx_id = ?)
   ORDER BY transactions.timestamp DESC, sats_amount_with_fee DESC
-  LIMIT :first
+  LIMIT ?;
 `
 
 const SELECT_MISMATCHED_IDS = `
@@ -60,12 +60,15 @@ const SELECT_MISMATCHED_IDS = `
 
 const DROP_TXNS_TABLE = `DROP TABLE IF EXISTS ${TXNS_TABLE};`
 
-export const TransactionsRepositoryPrimary = (db: Db) => {
-  console.log("Using TransactionsRepositoryPrimary...")
+export const TransactionsRepositoryAlt = (db: SqliteDb) => {
+  console.log("Using TransactionsRepositoryAlt...")
 
   const checkRepositoryExists = async (): Promise<boolean | Error> => {
     try {
-      const txn: Txn | undefined = await db.get(`SELECT * FROM ${TXNS_TABLE}`)
+      const txns: Txn[] | undefined = await db.select({
+        query: `SELECT * FROM ${TXNS_TABLE}`,
+      })
+      const txn = txns && txns.length ? txns[0] : undefined
       return true
     } catch (err) {
       const { message } = err as Error
@@ -80,7 +83,7 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
 
   const deleteRepositoryForRebuild = async (): Promise<true | Error> => {
     try {
-      await db.run(DROP_TXNS_TABLE)
+      await db.create(DROP_TXNS_TABLE)
       return true
     } catch (err) {
       const { message } = err as Error
@@ -94,7 +97,7 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
   const sumSatsAmount = async (): Promise<number | Error> => {
     const SUM_SATS_AMOUNT = `SELECT SUM(sats_amount_with_fee) as sum FROM transactions;`
     try {
-      const { sum } = await db.get(SUM_SATS_AMOUNT)
+      const [{ sum }] = await db.select({ query: SUM_SATS_AMOUNT })
       return sum || 0
     } catch (err) {
       const { message } = err as Error
@@ -109,10 +112,11 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
 
   const fetchTxnById = async (id: string): Promise<Txn | undefined | Error> => {
     try {
-      const txn: Txn | undefined = await db.get(
-        "SELECT * FROM transactions WHERE source_tx_id = ?",
-        id,
-      )
+      const txns: Txn[] | undefined = await db.select({
+        query: "SELECT * FROM transactions WHERE source_tx_id = ?",
+        args: [id],
+      })
+      const txn = txns && txns.length ? txns[0] : undefined
       return txn
     } catch (err) {
       const { message } = err as Error
@@ -130,11 +134,11 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
       // Note: These potentially break if there are more than one records with
       //       the same 'sats_amount_with_fee' and 'timestamp' values (which should never happen)
       const rows = after
-        ? await db.all(TXNS_JOIN_PAGE, {
-            [":first"]: first || DEFAULT_PAGE_SIZE,
-            [":after"]: after,
+        ? await db.select({
+            query: TXNS_JOIN_PAGE,
+            args: [after, after, after, first || DEFAULT_PAGE_SIZE],
           })
-        : await db.all(TXNS_JOIN, { [":first"]: first || DEFAULT_PAGE_SIZE })
+        : await db.select({ query: TXNS_JOIN, args: [first || DEFAULT_PAGE_SIZE] })
       return rows
     } catch (err) {
       const { message } = err as Error
@@ -153,7 +157,7 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
 
     let rows: INPUT_TXN[]
     try {
-      rows = await db.all(BASE_TXNS_ASC_SELECT)
+      rows = await db.select({ query: BASE_TXNS_ASC_SELECT })
     } catch (err) {
       const { message } = err as Error
       switch (true) {
@@ -177,7 +181,7 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
 
   const fetchMismatchedIds = async (): Promise<{ source_tx_id: string }[] | Error> => {
     try {
-      const rows = await db.all(SELECT_MISMATCHED_IDS)
+      const rows = await db.select({ query: SELECT_MISMATCHED_IDS })
       return rows
     } catch (err) {
       const { message } = err as Error
@@ -192,7 +196,8 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
 
   const fetchLatestCalc = async () => {
     try {
-      const row = await db.get(SELECT_LATEST_CALC)
+      const rows = await db.select({ query: SELECT_LATEST_CALC })
+      const row = rows && rows.length ? rows[0] : undefined
       return row
     } catch (err) {
       const { message } = err as Error
@@ -207,30 +212,32 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
 
   const persistManyTxns = async (rows: INPUT_TXN[]) => {
     try {
-      await db.run(CREATE_TXNS_TABLE)
+      await db.create(CREATE_TXNS_TABLE)
 
       console.log("Preparing persist statement...")
       const start = Date.now()
 
-      const stmt = await db.prepare(INSERT_TXN)
       for (const txn of rows) {
-        await stmt.run({
-          [":sats_amount_with_fee"]: txn.sats,
-          [":sats_fee"]: txn.satsFee,
-          [":timestamp"]: new Date(txn.timestamp * 1000).toISOString(),
-          [":fiat_per_sat"]: Math.round(txn.price * 10 ** 4),
-          [":fiat_per_sat_offset"]: 12,
-          [":fiat_code"]: "USD",
-          [":source_name"]: "galoy",
-          [":source_tx_id"]: txn.id,
-          [":ln_payment_hash"]: txn.paymentHash,
-          [":onchain_tx_id"]: txn.txId,
-          // TODO: figure how to check & finalize pending txns
-          [":tx_status"]: txn.status,
+        await db.insert({
+          query: INSERT_TXN,
+          row: [
+            txn.sats, // [":sats_amount_with_fee"]
+            txn.satsFee, // [":sats_fee"]
+            new Date(txn.timestamp * 1000).toISOString(), // [":timestamp"]
+            Math.round(txn.price * 10 ** 4), // [":fiat_per_sat"]
+            12, // [":fiat_per_sat_offset"]
+            "USD", // [":fiat_code"]
+            "galoy", // [":source_name"]
+            txn.id, // [":source_tx_id"]
+            txn.paymentHash, // [":ln_payment_hash"]
+            txn.txId, // [":onchain_tx_id"]
+
+            // TODO: figure how to check & finalize pending txns
+            txn.status, // [":tx_status"]
+          ],
         })
       }
 
-      await stmt.finalize()
       const elapsed = (Date.now() - Number(start)) / 1000
       console.log(`Persisted ${rows.length} records in ${elapsed}s.`)
     } catch (err) {
@@ -244,28 +251,39 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
 
   const persistManyCalcs = async (rows) => {
     try {
-      await db.run(CREATE_CALCS_TABLE)
+      await db.create(CREATE_CALCS_TABLE)
 
       console.log("Preparing calcs persist statement...")
       const start = Date.now()
 
-      const stmt = await db.prepare(INSERT_CALC)
       for (const row of rows) {
-        await stmt.run({
-          [":source_tx_id"]: row.source_tx_id,
-          [":timestamp"]: row.timestamp,
-          [":aggregate_sats"]: row.aggregate_sats,
-          [":aggregate_fiat_amount"]: row.aggregate_fiat_amount,
-          [":stack_price_with_pl_included"]: row.stack_price_with_pl_included,
-          [":fiat_amount_less_pl"]: row.fiat_amount_less_pl,
-          [":fiat_pl"]: row.fiat_pl,
-          [":fiat_pl_percentage"]: row.fiat_pl_percentage,
-          [":aggregate_fiat_amount_less_pl"]: row.aggregate_fiat_amount_less_pl,
-          [":stack_price_without_pl"]: row.stack_price_without_pl,
+        await db.insert({
+          query: INSERT_CALC,
+          row: [
+            row.source_tx_id, // [":source_tx_id"]
+            row.timestamp, // [":timestamp"]
+
+            row.aggregate_sats, // [":aggregate_sats"]
+            row.aggregate_fiat_amount, // [":aggregate_fiat_amount"]
+            row.stack_price_with_pl_included, // [":stack_price_with_pl_included"]
+            row.fiat_amount_less_pl, // [":fiat_amount_less_pl"]
+            row.fiat_pl, // [":fiat_pl"]
+            row.fiat_pl_percentage, // [":fiat_pl_percentage"]
+            row.aggregate_fiat_amount_less_pl, // [":aggregate_fiat_amount_less_pl"]
+            row.stack_price_without_pl, // [":stack_price_without_pl"]
+
+            row.aggregate_sats, // [":aggregate_sats"]
+            row.aggregate_fiat_amount, // [":aggregate_fiat_amount"]
+            row.stack_price_with_pl_included, // [":stack_price_with_pl_included"]
+            row.fiat_amount_less_pl, // [":fiat_amount_less_pl"]
+            row.fiat_pl, // [":fiat_pl"]
+            row.fiat_pl_percentage, // [":fiat_pl_percentage"]
+            row.aggregate_fiat_amount_less_pl, // [":aggregate_fiat_amount_less_pl"]
+            row.stack_price_without_pl, // [":stack_price_without_pl"]
+          ],
         })
       }
 
-      await stmt.finalize()
       const elapsed = (Date.now() - Number(start)) / 1000
       console.log(`Persisted ${rows.length} calc records in ${elapsed}s.`)
     } catch (err) {
