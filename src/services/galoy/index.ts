@@ -18,6 +18,7 @@ const LnNoAmountInvoiceCreate = fs.readFileSync(
   `${galoyRequestsPath}/ln-no-amount-invoice-create.gql`,
   "utf8",
 )
+const BtcPrice = fs.readFileSync(`${galoyRequestsPath}/btc-price.gql`, "utf8")
 
 export const Galoy = async ({ endpoint, token }: GaloyConfig) => {
   const defaultHeaders = {
@@ -267,6 +268,28 @@ export const Galoy = async ({ endpoint, token }: GaloyConfig) => {
     return { paymentRequest, paymentHash, paymentSecret }
   }
 
+  const getBtcPrice = async () => {
+    const query = {
+      query: BtcPrice,
+    }
+
+    const {
+      data: { data, errors },
+    }: { data: BTC_PRICE } = await axios.post(endpoint, query, {
+      headers: defaultHeaders,
+    })
+    const errs = errors
+    if (errs && errs.length) {
+      return new Error(errs[0].message || JSON.stringify(errs))
+    }
+
+    const {
+      btcPrice: { base, currencyUnit, formattedAmount, offset },
+    } = data
+
+    return { base, currencyUnit, formattedAmount, offset }
+  }
+
   return {
     balance,
     fetchTransactionsPage,
@@ -274,5 +297,6 @@ export const Galoy = async ({ endpoint, token }: GaloyConfig) => {
     sendLnPaymentWithAmount,
     createWithAmountLnInvoice,
     createNoAmountLnInvoice,
+    getBtcPrice,
   }
 }
