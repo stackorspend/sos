@@ -227,6 +227,7 @@ export const TransactionsRepositoryPrimary = (db: Db) => {
           [":onchain_tx_id"]: txn.txId,
           // TODO: figure how to check & finalize pending txns
           [":tx_status"]: txn.status,
+          [":tx_description"]: txn.description,
         })
       }
 

@@ -234,6 +234,7 @@ export const TransactionsRepositoryAlt = (db: SqliteDb) => {
 
             // TODO: figure how to check & finalize pending txns
             txn.status, // [":tx_status"]
+            txn.description, // [":tx_description"]
           ],
         })
       }
