@@ -94,7 +94,15 @@ const main = async () => {
 
     const btcPrice = await sos.getCurrentPrice()
     if (btcPrice instanceof Error) throw btcPrice
-    console.log("Current BTC price is:", btcPrice.usdPerBtc)
+    const { usdPerBtc } = btcPrice
+    console.log("Current BTC price is:", usdPerBtc)
+
+    const balances = await sos.fetchBalances()
+    if (balances instanceof Error) throw balances
+    const { satsBalance } = balances
+    const fiatBalance = (satsBalance / 100_000_000) * usdPerBtc
+    console.log("Current sats balance is:", satsBalance)
+    console.log("Current sats balance is:", fiatBalance)
   }
 
   // ==========
