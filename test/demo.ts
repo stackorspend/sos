@@ -141,6 +141,8 @@ const main = async () => {
     console.log({ noAmountInvoice })
   }
 
+  // await sos.clearTxData(db)
+
   await db.db.close()
 }
 
